@@ -35,6 +35,7 @@ int main() {
                     res->writeStatus("400");
                     res->write("Invalid room code");
                     res->end();
+                    return;
                 }
 
                 rooms[room_id].send("Ping");
@@ -50,30 +51,17 @@ int main() {
                 res->end();
             })
             .ws<SocketData>("/join/:room", {
-                                /* Settings */
-                                .compression = uWS::CompressOptions::DISABLED,
-                                .maxPayloadLength = 100 * 1024 * 1024, // TODO: figure out what a good value is
-                                .idleTimeout = 16, // TODO: figure out what a good value is
-                                .maxBackpressure = 100 * 1024 * 1024, // TODO: figure out what a good value is
-                                .closeOnBackpressureLimit = false, // TODO: figure out what a good value is
-                                .resetIdleTimeoutOnSend = false, // TODO: figure out what a good value is
-                                .sendPingsAutomatically = true,
                                 /* Handlers */
                                 .upgrade = [](auto *res, auto *req, auto *context) {
-                                    /* You may read from req only here, and COPY whatever you need into your PerSocketData.
-                                     * PerSocketData is valid from .open to .close event, accessed with ws->getUserData().
-                                     * HttpRequest (req) is ONLY valid in this very callback, so any data you will need later
-                                     * has to be COPIED into PerSocketData here. */
-
                                     int room_id = std::stoi(std::string(req->getParameter("room")));
 
                                     if (!rooms.contains(room_id)) {
                                         res->writeStatus("400");
                                         res->write("Invalid room code");
                                         res->end();
+                                        return;
                                     }
 
-                                    /* Immediately upgrading without doing anything "async" before, is simple */
                                     res->template upgrade<SocketData>({
                                                                           .room_id = room_id
                                                                       },
@@ -81,12 +69,6 @@ int main() {
                                                                       req->getHeader("sec-websocket-protocol"),
                                                                       req->getHeader("sec-websocket-extensions"),
                                                                       context);
-
-                                    /* If you don't want to upgrade you can instead respond with custom HTTP here,
-                                     * such as res->writeStatus(...)->writeHeader(...)->end(...); or similar.*/
-
-                                    /* Performing async upgrade, such as checking with a database is a little more complex;
-                                     * see UpgradeAsync example instead. */
                                 },
                                 .open = [](auto *ws) {
                                     Client client(generate_client_id(clients), ws->getUserData()->room_id, false, ws);
@@ -101,24 +83,17 @@ int main() {
                                     ws->send(ostr.str(), uWS::TEXT);
                                 },
                                 .message = [](auto *ws, std::string_view message, uWS::OpCode opCode) {
-                                },
-                                .dropped = [](auto */*ws*/, std::string_view /*message*/, uWS::OpCode /*opCode*/) {
-                                    /* A message was dropped due to set maxBackpressure and closeOnBackpressureLimit limit */
-                                },
-                                .drain = [](auto */*ws*/) {
-                                    /* Check ws->getBufferedAmount() here */
-                                },
-                                .ping = [](auto */*ws*/, std::string_view) {
-                                    /* Not implemented yet */
-                                },
-                                .pong = [](auto */*ws*/, std::string_view) {
-                                    /* Not implemented yet */
+
                                 },
                                 .close = [](auto *ws, int /*code*/, std::string_view /*message*/) {
                                     // Remove from clients map
                                     Client client = clients[ws->getUserData()->client_id];
                                     clients.erase(client.client_id);
                                     rooms[client.room_id].remove_client(client);
+
+                                    // Close empty rooms
+                                    if(rooms[client.room_id].clients.empty())
+                                        rooms.erase(client.room_id);
                                 }
                             })
             .listen(3001, [](auto *listen_socket) {
