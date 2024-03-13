@@ -24,6 +24,7 @@ public:
     Room(int id);
     void add_client(const Client& client);
     void remove_client(const Client& client);
+    void send(const std::string& payload);
 };
 
 int generate_room_id(const std::map<int, Room> &rooms);

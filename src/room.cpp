@@ -27,6 +27,12 @@ void Room::remove_client(const Client &client) {
     }
 }
 
+void Room::send(const std::string &payload) {
+    for (Client client: clients) {
+        client.ws->send(payload, uWS::TEXT);
+    }
+}
+
 int generate_room_id(const std::map<int, Room> &rooms) {
     const int random = rand();
     int id = random % 10000;

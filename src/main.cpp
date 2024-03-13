@@ -29,6 +29,17 @@ int main() {
                 }
                 res->end();
             })
+            .get("/:room/ping", [](auto *res, auto *req) {
+                int room_id = std::stoi(std::string(req->getParameter("room")));
+                if (!rooms.contains(room_id)) {
+                    res->writeStatus("400");
+                    res->write("Invalid room code");
+                    res->end();
+                }
+
+                rooms[room_id].send("Ping");
+                res->end();
+            })
             .get("/clients", [](auto *res, auto *req) {
                 for (auto client: clients) {
                     std::ostringstream ostr;
@@ -90,7 +101,6 @@ int main() {
                                     ws->send(ostr.str(), uWS::TEXT);
                                 },
                                 .message = [](auto *ws, std::string_view message, uWS::OpCode opCode) {
-
                                 },
                                 .dropped = [](auto */*ws*/, std::string_view /*message*/, uWS::OpCode /*opCode*/) {
                                     /* A message was dropped due to set maxBackpressure and closeOnBackpressureLimit limit */
