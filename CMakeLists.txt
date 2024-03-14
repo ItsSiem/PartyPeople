@@ -11,13 +11,7 @@ file(GLOB source_files
         ${source_dir}/*.cpp
 )
 
-add_executable(PartyPeople ${source_files}
-        src/room.h
-        src/mini_game.h
-        src/room.cpp
-        src/client.h
-        src/SocketData.h
-        src/client.cpp)
+add_executable(PartyPeople ${source_files})
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${source_dir}/include)
 target_link_libraries(${PROJECT_NAME} ${USOCKETS_LIBRARY})
