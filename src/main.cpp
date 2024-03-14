@@ -8,20 +8,47 @@
 std::map<int, Room> rooms;
 std::map<int, Client> clients;
 
+void create_room(uWS::WebSocket<true, true, SocketData>*& ws) {
+    Room room(generate_room_id(rooms));
+    rooms[room.room_id] = room;
+    ws->getUserData()->room_id = room.room_id;
+}
+
+void create_client(const bool host, uWS::WebSocket<true, true, SocketData>*& ws) {
+    Client client(generate_client_id(clients), ws->getUserData()->room_id, host, ws);
+    clients[client.client_id] = client;
+    ws->getUserData()->client_id = client.client_id;
+    rooms[ws->getUserData()->room_id].add_client(client);
+}
+
+void remove_client(uWS::WebSocket<true, true, SocketData>*& ws) {
+    // Remove client from map
+    Client client = clients[ws->getUserData()->client_id];
+    clients.erase(client.client_id);
+    rooms[client.room_id].remove_client(client);
+
+    if (client.is_host) {
+        // Todo: Promote new client to host?
+    }
+
+    // Close room if empty
+    if (rooms[client.room_id].clients.empty())
+        rooms.erase(client.room_id);
+}
+
+void send_join_message(uWS::WebSocket<true, true, SocketData>*& ws) {
+    std::ostringstream ostr;
+    ostr << "client  " << ws->getUserData()->client_id << " joined room " <<
+            ws->getUserData()->room_id << std::endl;
+
+    rooms[ws->getUserData()->room_id].send(ostr.str());
+}
+
 int main() {
     srand(time(nullptr));
     uWS::SSLApp()
-            .get("/host", [](auto *res, auto *req) {
-                Room room(generate_room_id(rooms));
-                rooms[room.room_id] = room;
-
-                std::ostringstream ostr;
-                ostr << "Room id: " << room.room_id << std::endl;
-
-                res->end(ostr.str());
-            })
             .get("/rooms", [](auto *res, auto *req) {
-                for (auto room: rooms) {
+                for (const auto& room: rooms) {
                     std::ostringstream ostr;
                     ostr << "Room " << room.second.room_id << " " << room.second.clients.size() <<
                             " clients connected" << std::endl;
@@ -29,20 +56,8 @@ int main() {
                 }
                 res->end();
             })
-            .get("/:room/ping", [](auto *res, auto *req) {
-                int room_id = std::stoi(std::string(req->getParameter("room")));
-                if (!rooms.contains(room_id)) {
-                    res->writeStatus("400");
-                    res->write("Invalid room code");
-                    res->end();
-                    return;
-                }
-
-                rooms[room_id].send("Ping");
-                res->end();
-            })
             .get("/clients", [](auto *res, auto *req) {
-                for (auto client: clients) {
+                for (const auto& client: clients) {
                     std::ostringstream ostr;
                     ostr << "Client " << client.second.client_id << " connected to room " << client.second.room_id <<
                             std::endl;
@@ -71,29 +86,26 @@ int main() {
                                                                       context);
                                 },
                                 .open = [](auto *ws) {
-                                    Client client(generate_client_id(clients), ws->getUserData()->room_id, false, ws);
-                                    clients[client.client_id] = client;
-                                    rooms[client.room_id].add_client(client);
-                                    ws->getUserData()->client_id = client.client_id;
-
-                                    std::ostringstream ostr;
-                                    ostr << "client id: " << ws->getUserData()->client_id << std::endl << "room id: " <<
-                                            ws->getUserData()->room_id << std::endl;
-
-                                    ws->send(ostr.str(), uWS::TEXT);
+                                    create_client(false, ws);
+                                    send_join_message(ws);
                                 },
                                 .message = [](auto *ws, std::string_view message, uWS::OpCode opCode) {
-
                                 },
                                 .close = [](auto *ws, int /*code*/, std::string_view /*message*/) {
-                                    // Remove from clients map
-                                    Client client = clients[ws->getUserData()->client_id];
-                                    clients.erase(client.client_id);
-                                    rooms[client.room_id].remove_client(client);
-
-                                    // Close empty rooms
-                                    if(rooms[client.room_id].clients.empty())
-                                        rooms.erase(client.room_id);
+                                    remove_client(ws);
+                                }
+                            })
+            .ws<SocketData>("/host", {
+                                /* Handlers */
+                                .open = [](auto *ws) {
+                                    create_room(ws);
+                                    create_client(true, ws);
+                                    send_join_message(ws);
+                                },
+                                .message = [](auto *ws, std::string_view message, uWS::OpCode opCode) {
+                                },
+                                .close = [](auto *ws, int /*code*/, std::string_view /*message*/) {
+                                    remove_client(ws);
                                 }
                             })
             .listen(3001, [](auto *listen_socket) {
