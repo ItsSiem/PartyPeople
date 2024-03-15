@@ -11,6 +11,7 @@
 class Client {
 public:
     int client_id;
+    std::string name;
     Room* room;
     bool is_host;
     uWS::WebSocket<true, true, SocketData>* ws;
@@ -18,6 +19,7 @@ public:
     Client(int client, Room* room, bool host, uWS::WebSocket<true, true, SocketData>* ws);
 };
 bool operator==(const Client& a, const Client& b);
+std::ostream& operator<<(std::ostream& stream, const Client& client);
 
 int generate_client_id(const std::map<int, Client>& clients);
 

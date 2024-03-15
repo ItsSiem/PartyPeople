@@ -78,8 +78,7 @@ int main() {
             .get("/clients", [](auto *res, auto *req) {
                 for (const auto& client: clients) {
                     std::ostringstream ostr;
-                    ostr << "Client " << client.second.client_id << " connected to room " << client.second.room <<
-                            std::endl;
+                    ostr << client.second << std::endl;
                     res->write(ostr.str());
                 }
                 res->end();
