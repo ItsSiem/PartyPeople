@@ -22,6 +22,10 @@ Client::Client(int client, Room* room, bool host, uWS::WebSocket<true, true, Soc
     this->ws = ws;
 }
 
+void Client::send(const std::string &payload, uWS::OpCode opcode) const {
+    ws->send(payload, opcode);
+}
+
 bool operator==(const Client &a, const Client &b) {
     return a.client_id == b.client_id;
 }

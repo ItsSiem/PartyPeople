@@ -21,7 +21,7 @@ void RPSBracket::ProcessInput(Client *client, std::string_view input) {
     istr.read((char *) &rps_input, sizeof(RPSInput));
 
     if (!validate(rps_input)) {
-        client->ws->send("Unable to process input, data malformed", uWS::TEXT);
+        client->send("Unable to process input, data malformed");
         return;
     }
 

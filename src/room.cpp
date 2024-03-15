@@ -29,9 +29,9 @@ void Room::remove_client(Client* client) {
     }
 }
 
-void Room::send(const std::string &payload) {
+void Room::send(const std::string &payload, uWS::OpCode opcode) {
     for (Client* client: clients) {
-        client->ws->send(payload, uWS::TEXT);
+        client->send(payload, opcode);
     }
 }
 

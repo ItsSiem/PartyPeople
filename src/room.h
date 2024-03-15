@@ -22,7 +22,7 @@ public:
     Room(int id);
     void add_client(Client* client);
     void remove_client(Client* client);
-    void send(const std::string& payload);
+    void send(const std::string& payload, uWS::OpCode opcode = uWS::TEXT);
 };
 std::ostream& operator<<(std::ostream& stream, const Room& room);
 int generate_room_id(const std::map<int, Room> &rooms);

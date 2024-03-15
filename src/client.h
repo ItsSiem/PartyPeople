@@ -14,9 +14,11 @@ public:
     std::string name;
     Room* room;
     bool is_host;
-    uWS::WebSocket<true, true, SocketData>* ws;
     Client();
     Client(int client, Room* room, bool host, uWS::WebSocket<true, true, SocketData>* ws);
+    void send(const std::string& payload, uWS::OpCode opcode = uWS::TEXT) const;
+private:
+    uWS::WebSocket<true, true, SocketData>* ws;
 };
 bool operator==(const Client& a, const Client& b);
 std::ostream& operator<<(std::ostream& stream, const Client& client);
