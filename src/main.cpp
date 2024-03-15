@@ -40,7 +40,7 @@ void remove_client(uWS::WebSocket<true, true, SocketData>*& ws) {
 
 void send_join_message(uWS::WebSocket<true, true, SocketData>*& ws) {
     std::ostringstream ostr;
-    ostr << "client  " << ws->getUserData()->client->client_id << " joined room " <<
+    ostr << "client  " << ws->getUserData()->client->name << " joined room " <<
             ws->getUserData()->room->room_id << std::endl;
 
     ws->getUserData()->room->send(ostr.str());
@@ -69,8 +69,7 @@ int main() {
             .get("/rooms", [](auto *res, auto *req) {
                 for (const auto& room: rooms) {
                     std::ostringstream ostr;
-                    ostr << "Room " << room.second.room_id << " " << room.second.clients.size() <<
-                            " clients connected" << std::endl;
+                    ostr << room.second << std::endl;
                     res->write(ostr.str());
                 }
                 res->end();
