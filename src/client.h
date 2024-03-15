@@ -11,11 +11,11 @@
 class Client {
 public:
     int client_id;
-    int room_id;
+    Room* room;
     bool is_host;
     uWS::WebSocket<true, true, SocketData>* ws;
     Client();
-    Client(int client, int room, bool host, uWS::WebSocket<true, true, SocketData>* ws);
+    Client(int client, Room* room, bool host, uWS::WebSocket<true, true, SocketData>* ws);
 };
 bool operator==(const Client& a, const Client& b);
 

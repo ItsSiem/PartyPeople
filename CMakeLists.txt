@@ -7,8 +7,9 @@ find_library(USOCKETS_LIBRARY uSockets.a PATHS /usr/local/lib REQUIRED)
 find_package(ZLIB REQUIRED)
 
 set(source_dir ${CMAKE_CURRENT_SOURCE_DIR}/src)
-file(GLOB source_files
+file(GLOB_RECURSE source_files
         ${source_dir}/*.cpp
+        ${source_dir}/*.h
 )
 
 add_executable(PartyPeople ${source_files})

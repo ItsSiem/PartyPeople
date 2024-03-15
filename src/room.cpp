@@ -8,17 +8,19 @@
 
 Room::Room() {
     room_id = -1;
+    current_game = nullptr;
 }
 
 Room::Room(int id) {
     room_id = id;
+    current_game = nullptr;
 }
 
-void Room::add_client(const Client &client) {
+void Room::add_client(Client* client) {
     clients.push_back(client);
 }
 
-void Room::remove_client(const Client &client) {
+void Room::remove_client(Client* client) {
     for (int i = 0; i < clients.size(); ++i) {
         if (clients[i] == client) {
             clients.erase(clients.begin() + i);
@@ -28,8 +30,8 @@ void Room::remove_client(const Client &client) {
 }
 
 void Room::send(const std::string &payload) {
-    for (Client client: clients) {
-        client.ws->send(payload, uWS::TEXT);
+    for (Client* client: clients) {
+        client->ws->send(payload, uWS::TEXT);
     }
 }
 

@@ -1,47 +1,66 @@
 #include <iostream>
 #include <sstream>
 
-#include "client.h"
+#include "SocketData.h"
 #include "room.h"
+#include "client.h"
+#include "games/rps_bracket/rps_bracket.h"
 #include "uWebSockets/App.h"
 
 std::map<int, Room> rooms;
 std::map<int, Client> clients;
 
 void create_room(uWS::WebSocket<true, true, SocketData>*& ws) {
-    Room room(generate_room_id(rooms));
-    rooms[room.room_id] = room;
-    ws->getUserData()->room_id = room.room_id;
+    int room_id = generate_room_id(rooms);
+    rooms[room_id] = Room(room_id);
+    ws->getUserData()->room = &rooms[room_id];
 }
 
 void create_client(const bool host, uWS::WebSocket<true, true, SocketData>*& ws) {
-    Client client(generate_client_id(clients), ws->getUserData()->room_id, host, ws);
-    clients[client.client_id] = client;
-    ws->getUserData()->client_id = client.client_id;
-    rooms[ws->getUserData()->room_id].add_client(client);
+    int client_id = generate_client_id(clients);
+    clients[client_id] = Client(generate_client_id(clients), ws->getUserData()->room, host, ws);
+    ws->getUserData()->client = &clients[client_id];
+    rooms[ws->getUserData()->room->room_id].add_client(&clients[client_id]);
 }
 
 void remove_client(uWS::WebSocket<true, true, SocketData>*& ws) {
     // Remove client from map
-    Client client = clients[ws->getUserData()->client_id];
-    clients.erase(client.client_id);
-    rooms[client.room_id].remove_client(client);
+    Client* client = ws->getUserData()->client;
+    clients.erase(client->client_id);
+    client->room->remove_client(client);
 
-    if (client.is_host) {
+    if (client->is_host) {
         // Todo: Promote new client to host?
     }
 
     // Close room if empty
-    if (rooms[client.room_id].clients.empty())
-        rooms.erase(client.room_id);
+    if (client->room->clients.empty())
+        rooms.erase(client->room->room_id);
 }
 
 void send_join_message(uWS::WebSocket<true, true, SocketData>*& ws) {
     std::ostringstream ostr;
-    ostr << "client  " << ws->getUserData()->client_id << " joined room " <<
-            ws->getUserData()->room_id << std::endl;
+    ostr << "client  " << ws->getUserData()->client->client_id << " joined room " <<
+            ws->getUserData()->room->room_id << std::endl;
 
-    rooms[ws->getUserData()->room_id].send(ostr.str());
+    ws->getUserData()->room->send(ostr.str());
+}
+
+void process_message(uWS::WebSocket<true, true, SocketData>*& ws, std::string_view message, uWS::OpCode opCode) {
+    Room* room = ws->getUserData()->room;
+    Client* client = ws->getUserData()->client;
+
+    if (message == "rps create") {
+        room->current_game = new RPSBracket(client, room->clients); // Todo: So uh we gotta clean this memory up at some point
+        ws->send("Created RPS", uWS::TEXT);
+        return;
+    }
+    if (message == "rps shoot") {
+        room->current_game->Update(20000);
+        return;
+    }
+
+    room->current_game->ProcessInput(client, message);
 }
 
 int main() {
@@ -59,7 +78,7 @@ int main() {
             .get("/clients", [](auto *res, auto *req) {
                 for (const auto& client: clients) {
                     std::ostringstream ostr;
-                    ostr << "Client " << client.second.client_id << " connected to room " << client.second.room_id <<
+                    ostr << "Client " << client.second.client_id << " connected to room " << client.second.room <<
                             std::endl;
                     res->write(ostr.str());
                 }
@@ -78,7 +97,7 @@ int main() {
                                     }
 
                                     res->template upgrade<SocketData>({
-                                                                          .room_id = room_id
+                                                                          .room = &rooms[room_id]
                                                                       },
                                                                       req->getHeader("sec-websocket-key"),
                                                                       req->getHeader("sec-websocket-protocol"),
@@ -90,6 +109,7 @@ int main() {
                                     send_join_message(ws);
                                 },
                                 .message = [](auto *ws, std::string_view message, uWS::OpCode opCode) {
+                                    process_message(ws, message, opCode);
                                 },
                                 .close = [](auto *ws, int /*code*/, std::string_view /*message*/) {
                                     remove_client(ws);
@@ -103,6 +123,7 @@ int main() {
                                     send_join_message(ws);
                                 },
                                 .message = [](auto *ws, std::string_view message, uWS::OpCode opCode) {
+                                    process_message(ws, message, opCode);
                                 },
                                 .close = [](auto *ws, int /*code*/, std::string_view /*message*/) {
                                     remove_client(ws);

@@ -5,14 +5,14 @@
 #include "client.h"
 Client::Client() {
     client_id = -1;
-    room_id = -1;
+    room = nullptr;
     is_host = false;
     ws = nullptr;
 }
 
-Client::Client(int client, int room, bool host, uWS::WebSocket<true, true, SocketData>* ws) {
+Client::Client(int client, Room* room, bool host, uWS::WebSocket<true, true, SocketData>* ws) {
     client_id = client;
-    room_id = room;
+    this->room = room;
     is_host = host;
     this->ws = ws;
 }

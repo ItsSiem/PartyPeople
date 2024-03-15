@@ -5,9 +5,13 @@
 #ifndef SOCKETDATA_H
 #define SOCKETDATA_H
 
+// Forward declaration because otherwise we get some funky cirular linking
+class Client;
+class Room;
+
 struct SocketData {
-    int client_id;
-    int room_id;
+    Client* client;
+    Room* room;
 };
 
 #endif //SOCKETDATA_H
