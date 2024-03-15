@@ -26,7 +26,7 @@ bool operator==(const Client &a, const Client &b) {
     return a.client_id == b.client_id;
 }
 
-std::ostream & operator<<(std::ostream stream, const Client &client) {
+std::ostream & operator<<(std::ostream& stream, const Client &client) {
     stream << client.name << "(i" << client.client_id << "r" << client.room->room_id << ")";
     return stream;
 }
