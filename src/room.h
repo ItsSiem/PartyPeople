@@ -24,7 +24,7 @@ public:
     void remove_client(Client* client);
     void send(const std::string& payload);
 };
-
+std::ostream& operator<<(std::ostream& stream, const Room& room);
 int generate_room_id(const std::map<int, Room> &rooms);
 
 #endif //ROOM_H

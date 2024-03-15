@@ -35,6 +35,12 @@ void Room::send(const std::string &payload) {
     }
 }
 
+std::ostream & operator<<(std::ostream &stream, const Room &room) {
+    std::string game_name = room.current_game != nullptr ? room.current_game->name : "Nothing";
+    stream << room.room_id << ", playing " << game_name << ", " << room.clients.size() << " clients connected";
+    return stream;
+}
+
 int generate_room_id(const std::map<int, Room> &rooms) {
     const int random = rand();
     int id = random % 10000;
