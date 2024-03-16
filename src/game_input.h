@@ -9,6 +9,7 @@
 class GameInput {
 public:
     virtual bool Validate() = 0;
+    virtual bool Validate(std::string& payload) = 0;
     virtual GameInput* Decode(std::string& payload) = 0;
     virtual std::string Encode() = 0;
 };

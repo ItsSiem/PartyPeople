@@ -16,14 +16,8 @@ RPSBracket::RPSBracket(Client *host, const std::vector<Client *> &players) : Min
 }
 
 void RPSBracket::ProcessInput(Client *client, std::string_view input) {
-    RPSInput rps_input;
-    std::istringstream istr{std::string(input)};
-    istr.read((char *) &rps_input, sizeof(RPSInput));
-
-    if (!validate(rps_input)) {
-        client->send("Unable to process input, data malformed");
-        return;
-    }
+    std::string i(input);
+    RPSInput rps_input(i);
 
     std::string s;
     switch (rps_input.choice) {

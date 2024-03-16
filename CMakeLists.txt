@@ -12,8 +12,7 @@ file(GLOB_RECURSE source_files
         ${source_dir}/*.h
 )
 
-add_executable(PartyPeople ${source_files}
-        src/game_input.h)
+add_executable(PartyPeople ${source_files})
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${source_dir}/include)
 target_link_libraries(${PROJECT_NAME} ${USOCKETS_LIBRARY})

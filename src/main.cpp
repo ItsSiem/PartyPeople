@@ -60,7 +60,12 @@ void process_message(uWS::WebSocket<true, true, SocketData>*& ws, std::string_vi
         return;
     }
 
-    room->current_game->ProcessInput(client, message);
+    try {
+        room->current_game->ProcessInput(client, message);
+    } catch (const std::invalid_argument& e) {
+        std::cerr << e.what() << std::endl;
+        ws->send(e.what(), uWS::TEXT);
+    }
 }
 
 int main() {
@@ -119,6 +124,8 @@ int main() {
                                     create_room(ws);
                                     create_client(true, ws);
                                     send_join_message(ws);
+                                    ws->getUserData()->room->current_game = new RPSBracket(ws->getUserData()->client, ws->getUserData()->room->clients); // Todo: So uh we gotta clean this memory up at some point
+                                    ws->send("Created RPS", uWS::TEXT);
                                 },
                                 .message = [](auto *ws, std::string_view message, uWS::OpCode opCode) {
                                     process_message(ws, message, opCode);
