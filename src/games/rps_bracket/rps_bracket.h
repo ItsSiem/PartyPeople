@@ -22,6 +22,7 @@ private:
     Timer timer;
     void generate_matches();
     void update_matches();
+    static void send_playerstates(RPSMatch* match);
 };
 
 #endif //RPS_BRACKET_H
