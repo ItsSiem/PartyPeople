@@ -14,7 +14,8 @@ public:
     Client* player_2;
     RPSChoice p2_choice;
     Client* winner;
-    RPSMatch(Client* p1, Client* p2);
+    int remaining_time;
+    RPSMatch(Client* p1, Client* p2, int round_time = 20000);
     void Evaluate();
 };
 

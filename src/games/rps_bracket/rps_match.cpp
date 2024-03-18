@@ -4,13 +4,13 @@
 
 #include "rps_match.h"
 
-RPSMatch::RPSMatch(Client *p1, Client *p2) {
+RPSMatch::RPSMatch(Client *p1, Client *p2, int round_time) {
     player_1 = p1;
     player_2 = p2;
-    std::cout << "match constructor" << std::endl;
     p1_choice = NONE;
     p2_choice = NONE;
     winner = nullptr;
+    remaining_time = round_time;
 }
 
 void RPSMatch::Evaluate() {

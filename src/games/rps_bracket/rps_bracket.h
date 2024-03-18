@@ -10,6 +10,7 @@
 #include "rps_match.h"
 #include "../../mini_game.h"
 #include "../../client.h"
+#include "../../timer.h"
 
 class RPSBracket final : public MiniGame {
 public:
@@ -17,8 +18,8 @@ public:
     void ProcessInput(Client* client, std::string_view input) override;
     void Update(int delta_time) override;
 private:
-    int round_time;
     std::vector<RPSMatch> matches;
+    Timer timer;
     void generate_matches();
 };
 
