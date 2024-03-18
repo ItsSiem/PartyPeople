@@ -12,8 +12,7 @@
 RPSBracket::RPSBracket(Client *host, const std::vector<Client *> &players) : MiniGame(
     host, players, "Rock Paper Scissor Bracket") {
     generate_matches();
-    int tick_time = 16; //ms
-    timer.setInterval([&] { Update(16); }, 16);
+    timer.setInterval([&] { Update(1000); }, 1000);
 }
 
 void RPSBracket::ProcessInput(Client *client, std::string_view input) {
@@ -61,34 +60,40 @@ void RPSBracket::ProcessInput(Client *client, std::string_view input) {
 }
 
 void RPSBracket::Update(int delta_time) {
-    for (auto &match: matches) {
+    for (int i = 0; i < matches.size(); i++) {
+        RPSMatch *match = &matches[i];
         // Inform matches with only one player that they are waiting for their opponent
-        if ((match.player_1 == nullptr || match.player_2 == nullptr) && !(
-                match.player_1 == nullptr && match.player_2 == nullptr)) {
-            if (match.player_1 == nullptr)
-                match.player_2->send("Waiting for your opponent...");
+        if ((match->player_1 == nullptr || match->player_2 == nullptr) && !(
+                match->player_1 == nullptr && match->player_2 == nullptr)) {
+            if (match->player_1 == nullptr)
+                match->player_2->send("Waiting for your opponent...");
             else
-                match.player_1->send("Waiting for your opponent...");
+                match->player_1->send("Waiting for your opponent...");
             continue;
         }
 
         // Only advance active matches
-        if (match.player_1 != nullptr && match.player_2 != nullptr && match.winner == nullptr) {
-            if (match.remaining_time > 0) {
-                match.remaining_time -= delta_time;
+        if (match->player_1 != nullptr && match->player_2 != nullptr && match->winner == nullptr) {
+            if (match->remaining_time > 0) {
+                match->remaining_time -= delta_time;
+                std::ostringstream ostr;
+                ostr << match->remaining_time / 1000 + 1 << "s remaining" << std::endl;
+                match->player_1->send(ostr.str());
+                match->player_2->send(ostr.str());
                 continue;
             }
 
-            match.Evaluate();
-            std::cout << *match.player_1 << " vs " << *match.player_2 << " : ";
-            if (match.winner == nullptr) {
+            match->Evaluate();
+            std::cout << *match->player_1 << " vs " << *match->player_2 << " : ";
+            if (match->winner == nullptr) {
                 std::cout << "DRAW" << std::endl;
-                match.player_1->send("Draw, try again");
-                match.player_2->send("Draw, try again");
-                match.remaining_time = 20000;
+                match->player_1->send("Draw, try again");
+                match->player_2->send("Draw, try again");
+                match->remaining_time = 20000;
             } else {
-                std::cout << *match.winner << " won" << std::endl;
-                match.winner->send("You win!");
+                std::cout << *match->winner << " won" << std::endl;
+                match->winner->send("You win!");
+                update_matches();
             }
         }
     }
@@ -114,10 +119,28 @@ void RPSBracket::generate_matches() {
         matches.emplace_back(players[i * 2], players[i * 2 + 1]);
     }
     for (int i = starting_matches; i < amount_of_matches; ++i) {
-        if (i == players.size() && players.size() % 2 != 0) {
+        if (i == starting_matches && players.size() % 2 != 0) {
             // Uneven player count so start one player againt the winner of another match
-            matches.emplace_back(players[i * 2], matches[i * 2 - 1].winner);
+            matches.emplace_back(nullptr, players[i * 2]);
         }
-        matches.emplace_back(matches[i - 1].winner, matches[i - 2].winner);
+        else
+            matches.emplace_back(nullptr, nullptr);
+    }
+}
+
+void RPSBracket::update_matches() {
+    int starting_matches = players.size() / 2;
+    for (int i = 0; i < matches.size(); ++i) {
+        RPSMatch *match = &matches[i];
+        RPSMatch a = matches[(i - starting_matches) * 2];
+        RPSMatch b = matches[(i - starting_matches) * 2 + 1];
+        if ((match->player_1 == nullptr || match->player_2 == nullptr) &&
+            (a.winner != nullptr || b.winner!= nullptr))
+        {
+            if (match->player_1 == nullptr)
+                match->player_1 = a.winner;
+            else
+                match->player_2 = b.winner;
+        }
     }
 }

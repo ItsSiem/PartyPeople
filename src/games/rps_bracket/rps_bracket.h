@@ -21,6 +21,7 @@ private:
     std::vector<RPSMatch> matches;
     Timer timer;
     void generate_matches();
+    void update_matches();
 };
 
 #endif //RPS_BRACKET_H
