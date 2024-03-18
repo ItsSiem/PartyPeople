@@ -26,7 +26,6 @@ void create_client(const bool host, uWS::WebSocket<true, true, SocketData>*& ws)
 void remove_client(uWS::WebSocket<true, true, SocketData>*& ws) {
     // Remove client from map
     Client* client = ws->getUserData()->client;
-    clients.erase(client->client_id);
     client->room->remove_client(client);
 
     if (client->is_host) {
@@ -36,6 +35,8 @@ void remove_client(uWS::WebSocket<true, true, SocketData>*& ws) {
     // Close room if empty
     if (client->room->clients.empty())
         rooms.erase(client->room->room_id);
+
+    clients.erase(client->client_id);
 }
 
 void send_join_message(uWS::WebSocket<true, true, SocketData>*& ws) {
